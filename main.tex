@@ -1,0 +1,1237 @@
+% Author: Erin Grant
+
+\documentclass[12pt]{beamer}
+\mode<presentation>
+
+% Math font
+\usefonttheme[onlymath]{serif}
+
+
+% Bibliography
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+
+% Theorems and definitions
+\usepackage{amsthm}
+
+
+% Plotting tools
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{patchplots}
+\usepgfplotslibrary{ternary}
+
+
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage[framemethod=tikz,xcolor=true]{mdframed}
+\usepackage{pdfrender}
+\usepackage{pgfplots}
+\usepackage{subcaption} \captionsetup{compatibility=false}
+\usepackage{tikz} \usetikzlibrary{arrows,positioning,shapes}
+\usepackage{va}
+\usepackage{3dplot}
+
+
+% Theme colour definitions
+\definecolor{uoft}{RGB}{6,41,88}
+\definecolor{slate}{RGB}{85,98,112}
+\definecolor{aqua}{RGB}{78,205,196}
+\definecolor{lime}{RGB}{199,244,100}
+\definecolor{coral}{RGB}{255,107,107}
+\definecolor{wine}{RGB}{196,77,88}
+
+\definecolor{depth}{RGB}{78,205,196}
+\definecolor{disparity}{RGB}{255,107,107}
+
+
+% Beamer colours
+\setbeamercolor{alerted text}{fg=wine}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{frametitle}{fg = slate}
+\setbeamercolor*{item}{fg = slate}
+
+
+\newcommand{\Dir}{\text{Dir}}
+\newcommand{\Multi}{\text{Multi}}
+
+\renewcommand{\thefootnote}{}
+\renewcommand{\footnotesize}{\tiny}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\green}[1]{\textcolor{black!20!green}{#1}}
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+
+% Presentation-specific information
+\title{Tutorial on Bayesian Non-parametric methods}
+\author{Erin Grant}
+\institute{
+    \scriptsize{Department of Computer Science, University of Toronto}
+}
+\date{November 27\textsuperscript{th}, 2015}
+\titlegraphic{\includegraphics[width=.3\textwidth]{images/UofTlogo}}
+
+
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+
+\section*{The Dirichlet Distribution}
+
+
+\begin{frame}
+    \frametitle{Intuition for the Dirichlet Distribution (1)}
+
+    Consider a six-sided die. 
+    \hspace{0.15\textwidth}
+    $\vcenter{\hbox{\includegraphics[width=0.2\textwidth]{images/dice.png}}}$
+
+    \vspace{.1\textheight}
+    \pause
+
+    The possible outcomes $\{1, 2, 3, 4, 5, 6\}$ of rolling the die:
+
+    \begin{itemize}
+        \item are discrete (countable);
+        \item are disjoint;
+        \item have probabilities:
+    \end{itemize}
+    \begin{align*}
+        P(1)=P(2)=P(3)=P(4)=P(5)=P(6)=\frac{1}{6}.
+    \end{align*}
+    
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Intuition for the Dirichlet Distribution (2)}
+
+    How do we model manufacturing error that causes
+    the die outcome probabilities $\{1, 2, 3, 4, 5, 6\}$
+    to be skewed?
+
+    \bigskip
+
+    \pause
+
+    We can use the \alert{Dirichlet} distribution, so that the probabilities
+    themselves are distributed:
+
+    \begin{align*}
+        \begin{bmatrix}
+            P(1),
+            &
+            P(2),
+            &
+            P(3),
+            &
+            P(4),
+            &
+            P(5),
+            &
+            P(6)
+        \end{bmatrix}
+        \sim
+        \Dir(\vec{\alpha})
+    \end{align*}
+
+    \medskip
+
+    where $\vec{\alpha} = (\alpha_1, \dots, \alpha_6)$ is a parameter vector
+    of \alert{pseudocounts} (prior expectations).
+
+\end{frame}
+\begin{frame}
+    \frametitle{Math Background for the Dirichlet Distribution (1)}
+
+    \alert{Probability simplex:} 
+    \begin{align*}
+        \left\{\vec{x} \in \mathbb{R}^k \mid x_1 + \cdots + x_k = 1, x_1, \dots,
+        x_k \ge 0\right\}
+    \end{align*}
+
+    \begin{figure}[!h]
+        \includegraphics[width=.5\textwidth]{images/dirichlet_distribution_uniform_one.png}
+
+        {\small The 2-dimensional probability simplex in $\mathbb{R}^3$.}
+    \end{figure}
+
+    \footnotetext{Figure adapted from \cite{Frigyik2010}}
+
+\end{frame}
+\begin{frame}
+    \frametitle{Math Background for the Dirichlet Distribution (2)}
+
+    Each point $q$ corresponds to a \alert{probability mass function} (pmf) over $k$ disjoint events.
+
+    \begin{figure}[!h]
+        \centering
+        \begin{tikzpicture}
+            \node[anchor=south west,inner sep=0] (image) at (0,0)
+            {\includegraphics[width=.5\textwidth]{images/dirichlet_distribution_uniform_one.png}};
+            \begin{scope}[x={(image.south east)},y={(image.north west)}]
+                \node [label=below:$q$,draw,fill=black,circle,inner sep=0pt,minimum size=1pt] at (0.6,0.6) {};
+            \end{scope}
+        \end{tikzpicture}
+
+        {\small E.g.: $q = [0.3, 0.1, 0.6]$ 
+            
+            $\downarrow$ 
+
+            pmf over three events with
+        probabilities $\tfrac{3}{10}$, $\tfrac{1}{10}$, and $\tfrac{3}{5}$.}
+    \end{figure}
+
+    \footnotetext{Figure adapted from \cite{Frigyik2010}}
+
+\end{frame}
+\begin{frame}
+    \frametitle{Math Background for the Dirichlet Distribution (3)}
+
+    The \alert{Dirichlet distribution} defines a probability for each point $q$
+    in the simplex (i.e., it is a pmf over pmfs).
+
+    \begin{figure}[!h]
+        \centering
+        \begin{tikzpicture}
+            \node[anchor=south west,inner sep=0] (image) at (0,0)
+            {\includegraphics[width=.5\textwidth]{images/dirichlet_distribution_uniform_one.png}};
+            \begin{scope}[x={(image.south east)},y={(image.north west)}]
+                \node [label=below:$q$,draw,fill=black,circle,inner sep=0pt,minimum size=1pt] at (0.6,0.6) {};
+            \end{scope}
+        \end{tikzpicture}
+
+        {\small $P(q) = \Dir(\vec{\alpha})$ for some $\vec{\alpha} = (\alpha_1, \alpha_2, \alpha_3)$.}
+    \end{figure}
+
+    \footnotetext{Figure adapted from \cite{Frigyik2010}}
+    
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{The Parameter Vector $\vec{\alpha}$}
+
+    \begin{figure}[!h]
+        \centering
+        \begin{subfigure}[t]{0.35\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/dirichlet_distribution_uniform_one.png}
+
+            $\alpha = [1, 1, 1]$
+        \end{subfigure}
+        \begin{subfigure}[t]{0.35\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/dirichlet_distribution_uniform_fractional.png}
+
+            $\alpha = [.1, .1, .1]$
+        \end{subfigure}
+
+        \medskip
+
+        \begin{subfigure}[t]{0.35\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/dirichlet_distribution_uniform_ten.png}
+
+            $\alpha = [10, 10, 10]$
+        \end{subfigure}
+        \begin{subfigure}[t]{0.35\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/dirichlet_distribution_skewed.png}
+
+            $\alpha = [2, 5, 15]$
+        \end{subfigure}
+    \end{figure}
+
+    \footnotetext{Figures from \cite{Frigyik2010}}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Refresher: Bayesian Updating and Conjugacy (1)}
+
+    We have a 
+    \red{likelihood} 
+    distribution $P(X \mid \mathbf{\theta})$, 
+    parametrised by some parameters $\mathbf{\theta}$, and a 
+    \blue{prior} $P(\theta)$ over the parameters $\theta$.
+
+    \bigskip
+
+    We want to infer a \green{posterior}
+    distribution over the parameters $\mathbf{\theta}$ 
+    after seeing some observations $X_1, \dots X_N$. 
+
+    \bigskip
+
+    We use Bayes' Rule:
+
+    \begin{align*}
+        \green{P(\theta \mid X_1, \dots, X_N)}
+        &= \frac{
+            \red{P(X_1, \dots, X_N \mid \theta)}
+            \, 
+            \blue{P(\theta)}
+        }
+        {
+            P(X_1, \dots, X_N)
+        }
+    \end{align*}
+
+    \bigskip
+
+    \pause
+
+    But
+    $P(X_1, \dots, X_N) = \int_ P(X_1, \dots, X_N \mid \theta')\, P(\theta')
+    \,\mathrm{d}\theta'$
+    is usually hard to compute.
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Refresher: Bayesian Updating and Conjugacy (2)}
+
+    \begin{mdframed}[tikzsetting={draw=red,ultra thick}]
+        But
+        $P(X_1, \dots, X_N) = \int_ P(X_1, \dots, X_N \mid \theta')\, P(\theta')
+        \,\mathrm{d}\theta'$
+        is usually hard to compute.
+    \end{mdframed}
+
+    \bigskip
+
+    \emph{Solution:} 
+    Use a \alert{conjugate} prior so that the posterior
+    can be computed in closed form.
+
+    \bigskip
+
+    E.g., the Dirichlet is conjugate to the \alert{Multinomial} distribution.
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{The Multinomial Distribution (1)}
+
+    The Multinomial distribution gives the probability 
+    of $N$ outcomes to be distributed over $K$ categories:
+
+    \begin{align*}
+        (X_1, \dots, X_N) \sim  \Multi(n, (q_1, \dots, q_K)),
+    \end{align*}
+
+    where 
+    
+    \begin{itemize}
+        \item $X_i$ is the number of times that the $i$th category occurred amongst
+        the $N$ events;
+        \item $\vec{q} = (q_1, \dots, q_K)$ gives the probabilities
+        for each of the $K$ categories to occur.
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{The Multinomial Distribution (2)}
+
+    Example: Roll a die $5$ times. What are the outcomes?
+
+    \bigskip
+
+    \begin{figure}[!h]
+    \includegraphics[width=0.2\textwidth]{images/dice.png}
+    \end{figure}
+
+    \bigskip
+
+    Let $X_i \in \{1, 2, 3, 4, 5, 6\}$ be the outcome of the $i$th roll.
+    Then 
+    \begin{align*}
+        \vec{X} &= (X_1, X_2, X_3, X_4, X_5) \sim \Multi(n, \vec{q}),
+    \end{align*}
+    with $n=5$ and $\vec{q} = \left(\tfrac{1}{6}, \tfrac{1}{6}, \tfrac{1}{6},
+    \tfrac{1}{6}, \tfrac{1}{6}, \tfrac{1}{6}\right)$.
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Bayesian Updating for the Dirichlet-Multinomial}
+
+    Use a Dirichlet prior over the
+    probability vector $\vec{Q}$:
+
+    \begin{align*}
+        \vec{Q} \sim \Dir\left(\vec{\alpha}\right)
+    \end{align*}
+
+    \vspace{-0.01\textheight}
+
+    \begin{figure}[h!]
+        \begin{tikzpicture}[scale=0.3, line width=1ex, draw=red!80]
+            \draw (1,0) -- (1,2);
+            \draw (0,1) -- (2,1);
+        \end{tikzpicture}
+    \end{figure}
+
+    \vspace{-0.05\textheight}
+
+    \begin{align*}
+        \left(\vec{X} \mid \vec{Q}\right) \sim \Multi\left(n, \vec{Q}\right) 
+    \end{align*}
+
+    \vspace{-0.01\textheight}
+
+    \begin{figure}[h!]
+        \begin{tikzpicture}
+            \node[single arrow,draw=red!80,fill=red!80,minimum
+            height=3cm,minimum width=4cm,shape border
+            rotate=270, scale=0.2] at (0,-1) {};
+        \end{tikzpicture}
+    \end{figure}
+
+    \vspace{-0.05\textheight}
+
+    \begin{align*}
+        \left(\vec{Q} \mid \vec{X} = \vec{x}\right) \sim \Dir\left(
+            \vec{\alpha}+\vec{x}\right).
+    \end{align*}
+
+    %TODO: label parts of equation with intuitive explanation
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Application: Dirichlet-Multinomial Mixture Model}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+        \begin{align*}
+            \only<1-2>{
+                \vec{Q} \mid \vec{\alpha} &&\sim&& 
+                \tikz[remember picture,baseline=(dir.base)] \node
+                (dir) at (0, 0)
+                {$\Dir\left(\vec{\alpha}\right)$};
+            }
+            \only<1>{\\\\}
+            \only<1,3>{
+                Z_1, \dots, Z_N \mid \vec{Q} &&\sim&& 
+                \tikz[remember picture,baseline=(multi.base)] \node
+                (multi) at (0, 0)
+                {$\Multi\left(N, \vec{Q}\right)$};
+            }
+            \only<1>{\\\\}
+            \only<1,4>{
+                \theta_k &&\sim&& 
+                \tikz[remember picture,baseline=(compprior.base)] \node
+                (compprior) at (0, 0)
+                {$\mathcal{G}$};
+            }
+            \only<1>{\\\\}
+            \only<1,5>{
+                X_i \mid Z_i, \theta_{Z_i} &&\sim&& 
+                \tikz[remember picture,baseline=(compdist.base)] \node
+                (compdist) at (0, 0)
+                {$\mathcal{F}\left(\theta_{Z_i}\right)$};
+            }
+        \end{align*}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+        \begin{tikzpicture}[overlay,remember picture]
+            \only<1-2>{
+                \node[single arrow,draw=blue,fill=blue,
+                scale=0.5,minimum height=4ex,shape border rotate=180,
+                right=0.1\textwidth of dir] (arrow1) {};
+                \node (label1) [right=0.1\textwidth of arrow1]
+                {\parbox{0.8\textwidth}{\color{blue} component assignment \\ probability}};
+            }
+
+            \only<1,3>{
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of multi] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} component assignment \\
+            variables $Z_i \in \{1, \dots, k\}$}};
+            }
+
+            \only<1,4>{
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of compprior] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} prior over parameters of\\
+            component distribution}};
+            }
+
+            \only<1,5>{
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of compdist] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} component likelihood \\ distribution}};
+            }
+        \end{tikzpicture}
+        \end{column}
+    \end{columns}
+
+    \only<2-5>{
+
+        \begin{figure}[!h]
+            \begin{tikzpicture}
+                \node[anchor=south west,inner sep=0] (image) at (0,0)
+                {\includegraphics[width=0.4\textwidth]{images/bishop_mixtures.png}};
+                \begin{scope}[x={(image.south east)},y={(image.north west)}]
+                    \node at (0.45,0.85) {\red{\small $k=1$}};
+                    \node at (0.45,0.1) {\blue{\small $k=2$}};
+                    \node [label=right:{$X_i$},draw=red,fill=red,circle,inner
+                    sep=1pt,minimum size=1pt] at (0.75,0.35) {};
+                \end{scope}
+            \end{tikzpicture}
+        \end{figure}
+
+        Determines
+        \only<2>{$P\left(k\right)$.}
+        \only<3>{$P\left(Z_i = k \mid \vec{Q} \right).$}
+        \only<4>{$P\left(\theta_k \right)$.}
+        \only<5>{$P\left(X_i \mid Z_i, \theta_{Z_i} \right)$.}
+    }
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Application: Dirichlet-Multinomial Mixture Model}
+
+    By conjugacy, the posterior is tractable to compute:
+    
+    \begin{align*}
+        P(
+        Z_1, \dots, Z_N
+        , 
+        \theta_1, \dots, \theta_K
+        \mid 
+            X_1, \dots, X_N
+        )
+    \end{align*}
+
+    \bigskip
+
+    \pause
+
+    \begin{itemize}
+        \item Allows us to answer:
+        \begin{itemize}
+            \item What cluster do the instances belong to? ($Z_1, \dots, Z_N$)
+            \item What are the properties of the clusters? ($\theta_1, \dots, \theta_K$)
+        \end{itemize}
+        \pause\bigskip
+        \item Applications:
+        \begin{itemize}
+            \item $X_i$ could be a document and $Z_i$ the topic of $X_i$.
+        \end{itemize}
+    \end{itemize}
+
+    \bigskip
+
+
+\end{frame}
+
+
+
+\section*{The Dirichlet Process}
+
+
+\begin{frame}
+    \frametitle{Background: Stochastic Processes (1)}
+
+    A \alert{stochastic process} is a collection of random variables indexed by
+    some index set:
+    \begin{align*}
+        \left\{X_i\right\}
+        &&
+        i \in \mathcal{I}
+        && 
+        X_i \sim \mathcal{D}(\theta).
+    \end{align*}
+
+    \bigskip
+
+    \pause
+
+    Any finite subset of these variables has a joint distribution; e.g.,
+    \begin{align*}
+        p\left(X_{j_1}, \dots, X_{j_n}\right) \sim  \mathbb{D}(\theta),
+        && (j_1, \dots, j_n) \subset \mathbb{N}.
+    \end{align*}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Background: Stochastic Processes (2)}
+
+    Why use a stochastic process instead of a set of random variables?
+
+    \bigskip
+    \pause
+
+    \only<2>{
+    \begin{itemize}
+        \item Index set has unknown dimension
+        \begin{itemize}
+            \item e.g., Topic modelling: 
+                words $w \in \{$corpus$\}$ are indexed
+                by topics $t$, where the number of topics is not known but
+                inferred from the data (\cite{teh2006hierarchical})
+        \end{itemize}
+    \end{itemize}
+    }
+
+    \pause
+
+    \only<3>{
+    \begin{itemize}
+        \item The index set is infinite-dimensional
+        \begin{itemize}
+            \item e.g., Brownian motion: 
+                the random displacement $X(t)$ of a particle depend on a
+                continuous time $t \in \mathbb{R}$
+        \end{itemize}
+    \end{itemize}
+
+    \centering
+    \includegraphics[width=0.4\textwidth]{images/brownian_motion.png}
+
+    }
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Intuition for the Dirichlet Process}
+
+    We want to generalize the Dirichlet distribution to be a pmf over an
+    infinite number of events:
+
+    \bigskip
+
+    \begin{align*}
+        \Dir\left(\alpha_1, \dots, \alpha_K\right) && K \to \infty
+    \end{align*}
+
+    \bigskip
+
+    It is a \alert{non-parametric} model since the number of categories $K$
+    is not fixed, and instead grows with the data.
+
+    \bigskip
+
+    \pause
+    
+    It becomes a \alert{Dirichlet process} instead of a distribution.
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Background: $\sigma$-Algebra (1)}
+
+    A \alert{$\sigma$-Algebra} over a set $\mathcal{B}$ is a collection of subsets
+    of $\mathcal{B}$ that is \emph{closed} under countably many of the
+    following operations:
+
+    \bigskip
+
+    \begin{description}
+        \item[Complement:] if $A \in \mathcal{B}$ then $A^C \in \mathcal{B}$;
+
+            \medskip
+
+        \item[Union:] if $A_1, A_2, \dots \in \mathcal{B}$ then $\bigcup A_i \in \mathcal{B}$;
+
+            \medskip
+
+        \item[Intersection:] if $A_1, A_2, \dots \in \mathcal{B}$ then $\bigcap
+            A_i \in \mathcal{B}$.
+    \end{description}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Background: $\sigma$-Algebra (2)}
+
+    Example: Let $\mathcal{B} = \{$
+        \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+        \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};},
+        \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+    $\}$ be the possible
+    colours of a traffic light that you encounter while driving.
+
+    \bigskip
+    
+    Then
+
+    \begin{align*}
+        \sigma = &\left\{
+            \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+            \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};},
+            \tikz{\node[circle,fill=red,minimum width=.8ex] {};},
+            \{
+                \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};}
+            \},
+            \{
+                \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+            \},
+            \right.
+            \\&
+            \left.
+            \{
+                \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};},
+                \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+            \},
+            \{
+                \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};},
+                \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+            \},
+            \varnothing
+        \right\}
+    \end{align*}
+
+    is a $\sigma$-algebra on $\mathcal{B}$.
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Dirichlet Process: Introduction (1)}
+
+    A Dirichlet process takes as its \alert{index set} a $\sigma$-algebra 
+    over a space $\mathcal{B}$:
+
+    \begin{align*}
+        \forall \text{ sets } B \in \sigma\left(\mathcal{B}\right),
+        &&
+        \tilde{P}(B) \in [0, 1]
+        && \text{ is a random variable.}
+    \end{align*}
+
+    \bigskip
+
+    \pause
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Dirichlet Process: Introduction (2)}
+
+    \alert{Marginalisation Property:}
+    For any finite partition $(B_1, \dots, B_N)$ of the space $\mathcal{B}$,
+    if $G \sim \text{DP}(\alpha,H)$, then 
+
+    \begin{align*}
+        \begin{bmatrix}
+            \tilde{P}\left(B_1\right) 
+            \\\\
+            \vdots
+            \\\\
+            \tilde{P}\left(B_N\right)
+        \end{bmatrix}
+        \sim \Dir
+        \begin{pmatrix}
+            \alpha H(B_1)
+            \\\\
+            \vdots
+            \\\\
+            \alpha H\left(B_N\right)
+        \end{pmatrix}
+    \end{align*}
+
+    \bigskip
+
+    \pause
+
+    \alert{Implication:}
+    Draws from the Dirichlet Process are random probability
+    distributions.
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Example of a ``DP''' Indexed by a Finite $\sigma$-algebra}
+
+    \begin{align*}
+        \begin{bmatrix}
+            \tilde{P}\left(
+                \only<1>{
+                    \{
+                        \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                        \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};}
+                    \}
+                }
+                \only<2>{
+                    \{
+                        \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                        \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};},
+                        \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+                    \}
+                }
+                \only<3>{
+                    \tikz{\node[circle,fill=green,minimum width=.8ex] {};}
+                }
+            \right)
+            \\\\
+            \tilde{P}\left(
+                \only<1>{
+                    \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+                }
+                \only<2>{
+                    \varnothing
+                }
+                \only<3>{
+                    \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};}
+                }
+            \right)
+            \only<3>{
+                \\\\
+                \tilde{P}\left(
+                    \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+                \right)
+            }
+        \end{bmatrix}
+        \sim\Dir
+        \begin{pmatrix}
+            \alpha H\left(
+                \only<1>{
+                    \{
+                        \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                        \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};}
+                    \}
+                }
+                \only<2>{
+                    \{
+                        \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};},
+                        \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};},
+                        \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+                    \}
+                }
+                \only<3>{
+                    \tikz{\node[circle,fill=green!80,minimum width=.8ex] {};}
+                }
+            \right)
+            \\\\
+            \alpha H\left(
+                \only<1>{
+                    \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+                }
+                \only<2>{
+                    \varnothing
+                }
+                \only<3>{
+                    \tikz{\node[circle,fill=yellow,minimum width=.8ex] {};}
+                }
+            \right)
+            \only<3>{
+                \\\\
+                \alpha H\left(
+                        \tikz{\node[circle,fill=red,minimum width=.8ex] {};}
+                \right)
+            }
+        \end{pmatrix}
+    \end{align*}
+
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Dirichlet Process: Definition}
+
+    \begin{mdframed}[tikzsetting={draw=red,ultra thick}]
+        \begin{align*}
+            \begin{bmatrix}
+                \tilde{P}\left(B_1\right) ,
+                &
+                \dots,
+                &
+                \tilde{P}\left(B_N\right)
+            \end{bmatrix}
+            \sim \Dir\left(\alpha H(B_1), \dots, \alpha H\left(B_N\right)\right)
+        \end{align*}
+
+        \medskip
+
+    \end{mdframed}
+
+    \bigskip
+
+    \only<1>{
+
+        $H$ is the (non-random) \alert{base distribution} over $\mathcal{B}$.
+
+        \bigskip
+
+        (Can be any probability distribution over $\mathcal{B}$.)
+        
+        \bigskip
+
+        It determines the mean of the DP for any set $B$:
+        \begin{align*}
+            \mathbb{E}\left(\tilde{P}(B)\right) &= H(B).
+        \end{align*}
+    }
+    \only<2>{
+        $\alpha$ is a positive real \alert{concentration parameter}.
+
+        \bigskip
+
+        It determines the concentration of the DP about the mean:
+        \begin{align*}
+            \text{Var}\left(\tilde{P}(B)\right) 
+            = \frac{H(B)(1 - H(B))}{\alpha + 1}.
+        \end{align*}
+    }
+\end{frame}
+
+
+\begin{frame}[t]
+    \frametitle{Example for a Finite $\sigma$-algebra}
+
+    \begin{mdframed}[tikzsetting={draw=red,ultra thick}]
+        Suppose the base distribution is given by
+        \begin{align*}
+            H \left(\tikz{\node[circle,fill=green!80,minimum width=.8ex] {};}\right)
+            = 0.6
+            &&
+            H \left(\tikz{\node[circle,fill=yellow,minimum width=.8ex] {};}\right)
+            = 0.1
+            &&
+            H \left(\tikz{\node[circle,fill=red,minimum width=.8ex] {};}\right)
+            = 0.3.
+        \end{align*}
+
+    \end{mdframed}
+
+    \begin{figure}[!h]
+        \centering
+        \begin{subfigure}[t]{0.32\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/example_dirichlet_alpha_2.png}
+
+            $\alpha = 2$
+        \end{subfigure}
+        \begin{subfigure}[t]{0.32\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/example_dirichlet_alpha_10.png}
+
+            $\alpha = 10$
+        \end{subfigure}
+        \begin{subfigure}[t]{0.32\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/example_dirichlet_alpha_20.png}
+
+            $\alpha = 20$
+        \end{subfigure}
+    \end{figure}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Generalization to Infinite $\sigma$-algebra (1)}
+
+    Suppose for a space $\mathcal{B}$, $\sigma(\mathcal{B})$ is (countably)
+    infinite.
+
+    \bigskip
+
+    \pause
+    
+    \alert{Example:} 
+    We want to create a generative unigram model of a text.
+
+    \bigskip
+
+    \pause
+    
+    We want to assign non-zero probability to the next word in the document.
+
+    \bigskip
+
+    \pause
+
+    But how do we distribute the probability mass when the number of words
+    (partitions) is unknown (and possibly infinite)?
+
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Generalization to Infinite $\sigma$-algebra (2)}
+
+    \alert{Solution:}
+    Model the document as a Dirichlet Process DP$(\alpha, H)$
+    (with $H$ initially uniform).
+
+    \bigskip
+    
+    Then a vocabulary of $N$ symbols corresponds to a partition into $N$ parts.
+
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Generalization to Infinite $\sigma$-algebra (3)}
+    
+    Under this model, the probability of a symbol $w$
+    is given by
+
+    \begin{align*}
+        P(w)
+        &=
+        \frac{F_w}{F + \alpha}
+    \end{align*}
+
+    if $w$ is seen, and 
+    \begin{align*}
+        P(w)
+        &=
+        \frac{\alpha}{F + \alpha}
+    \end{align*}
+
+    if $w$ is unseen.
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Draws from a DP with a Gaussian $H$}
+
+
+    \begin{figure}[!h]
+        \includegraphics[width=.7\textwidth]{images/gaussian_base_distribution.png}
+
+        Rows vary $\sigma$; columns vary $\alpha$.
+    \end{figure}
+
+
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Recall: Dirichlet-Multinomial Mixture Model (1)}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+        \begin{align*}
+            \vec{Q} \mid \vec{\alpha} &&\sim&& 
+            \tikz[remember picture,baseline=(dir.base)] \node
+            (dir) at (0, 0)
+            {$\Dir\left(\vec{\alpha}\right)$};
+            \\\\
+            Z_1, \dots, Z_N \mid \vec{Q} &&\sim&& 
+            \tikz[remember picture,baseline=(multi.base)] \node
+            (multi) at (0, 0)
+            {$\Multi\left(N, \vec{Q}\right)$};
+            \\\\
+            \theta_k &&\sim&& 
+            \tikz[remember picture,baseline=(compprior.base)] \node
+            (compprior) at (0, 0)
+            {$\mathcal{G}$};
+            \\\\
+            X_i \mid Z_i, \theta_{Z_i} &&\sim&& 
+            \tikz[remember picture,baseline=(compdist.base)] \node
+            (compdist) at (0, 0)
+            {$\mathcal{F}\left(\theta_{Z_i}\right)$};
+        \end{align*}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+        \begin{tikzpicture}[overlay,remember picture]
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of dir] (arrow1) {};
+            \node (label1) [right=0.1\textwidth of arrow1]
+            {\parbox{0.8\textwidth}{\color{blue} cluster assignment \\ probability}};
+
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of multi] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} cluster assignment \\ variables}};
+
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of compprior] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} prior over parameters of\\
+            component distribution}};
+            
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of compdist] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} component distribution}};
+        \end{tikzpicture}
+        \end{column}
+    \end{columns}
+
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Recall: Dirichlet-Multinomial Mixture Model (2)}
+
+    \begin{mdframed}[tikzsetting={draw=red,ultra thick}]
+
+        \begin{align*}
+            \left(
+                Q_1, \dots, Q_k
+            \right) 
+            \mid 
+                \alpha_1, \dots, \alpha_k
+            &&\sim&&
+            \Dir\left(
+                \alpha_1, \dots, \alpha_k
+            \right)
+        \end{align*}
+
+        \medskip
+
+    \end{mdframed}
+
+    \bigskip
+    \bigskip
+
+    What if $K \to \infty$?
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dirichlet Process Mixture Model (1)}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+        \begin{align*}
+            \mathcal{Q} \mid \alpha, H &&\sim&& 
+            \tikz[remember picture,baseline=(dir.base)] \node
+            (dir) at (0, 0)
+            {DP$\left(\alpha, H\right)$};
+            \\\\
+            \theta_i \mid \mathcal{Q} &&\sim&& 
+            \tikz[remember picture,baseline=(compprior.base)] \node
+            (compprior) at (0, 0)
+            {$\mathcal{Q}$};
+            \\\\
+            X_i \mid \theta_i &&\sim&& 
+            \tikz[remember picture,baseline=(compdist.base)] \node
+            (compdist) at (0, 0)
+            {$\mathcal{F}\left(\theta_{i}\right)$};
+        \end{align*}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+        \begin{tikzpicture}[overlay,remember picture]
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of dir] (arrow1) {};
+            \node (label1) [right=0.1\textwidth of arrow1]
+            {\parbox{0.8\textwidth}{\color{blue} random distribution over
+            parameters}};
+
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of compprior] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} latent parameter for $X_i$}};
+            
+            \node[single arrow,draw=blue,fill=blue,
+            scale=0.5,minimum height=4ex,shape border rotate=180,
+            right=0.1\textwidth of compdist] (arrow2) {};
+            \node (label2) [right=0.1\textwidth of arrow2]
+            {\parbox{0.8\textwidth}{\color{blue} likelihood distribution}};
+        \end{tikzpicture}
+        \end{column}
+    \end{columns}
+
+    \bigskip
+    \bigskip
+    \pause
+
+    $\mathcal{Q}$ is discrete, so multiple $\theta_i$ can take on the same value
+    (i.e., they \alert{cluster}).
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Dirichlet Process Mixture Model (2)}
+
+    Posterior inference for the number of clusters can be done using
+    Markov Chain Monte Carlo (MCMC):
+
+    \begin{figure}[!h]
+        \includegraphics[width=.7\textwidth]{images/dpmm_clustering.png}
+    \end{figure}
+
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Application: Dirichlet Processes in NLP}
+
+    \alert{Language modelling:} The number of words is unbounded.
+
+    \bigskip
+    \bigskip
+
+    \alert{Topic modelling:} The number of topics is inferred from
+    the data.
+
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Discussion: Relevance to the Word Learning Model}
+
+    In the present model, the meaning probability corresponds to the expected
+    value of the posterior of a Dirichlet distribution:
+
+    \begin{align*}
+        p_t(f \mid w) &=
+        \frac{
+            \text{assoc}_t(w, f) + \gamma
+        }
+        {
+            \sum_{f'}\text{assoc}_t(w, f') + k \cdot \gamma
+        }
+    \end{align*}
+
+    However, we fix the number of features $k$ ahead of time.
+
+    \bigskip
+
+    \pause
+
+    Can we effectively use a Dirichlet Process to allow the number of features
+    to grow with the data?
+
+
+\end{frame}
+
+
+\begin{frame}[t]
+    \frametitle{References}
+    \bibliography{references}
+\end{frame}
+
+\end{document}
